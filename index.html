@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CampusMiner AI - Overpower Campus Web & Document Intelligence Extractor</title>
+  <meta name="description" content="Aplikasi ekstraksi data web dan dokumen PDF/Word kampus instan tanpa framework. Ekstrak profil, fakultas, program studi, akreditasi, biaya kuliah, kontak, dokumen PDF, dan tabel.">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Icons (Lucide) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Libraries via CDN -->
+  <!-- SheetJS for Multi-sheet Excel export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- Turndown for Markdown conversion -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/turndown/7.1.2/turndown.min.js"></script>
+  <!-- PDF.js for in-browser PDF parsing & text extraction -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- Mammoth.js for Word (.docx) parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <!-- Tesseract.js for in-browser OCR image reading -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Header / Navigation Bar -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-group">
+        <div class="brand-icon">
+          <i data-lucide="graduation-cap"></i>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">CampusMiner <span class="badge-pro">PRO v2.0</span></span>
+          <span class="brand-subtitle">Universal Campus Web & Document Intelligence</span>
+        </div>
+      </div>
+
+      <!-- Mode Switcher Navigation -->
+      <nav class="nav-mode-switcher">
+        <button id="nav-mode-web" class="nav-mode-btn active" title="Crawl URL Website Kampus">
+          <i data-lucide="globe"></i>
+          <span>Crawl Web URL</span>
+        </button>
+        <button id="nav-mode-doc" class="nav-mode-btn" title="Crawl Dokumen PDF & Word">
+          <i data-lucide="file-text"></i>
+          <span>Crawl PDF / Word</span>
+        </button>
+        <button id="nav-mode-knowledge" class="nav-mode-btn" title="Ekstraktor Pengetahuan & Generator Chatbot">
+          <i data-lucide="brain-circuit"></i>
+          <span>Knowledge Extractor</span>
+          <span class="badge-ai">AI BOT</span>
+        </button>
+      </nav>
+      
+      <div class="header-actions">
+        <button id="btn-batch-modal" class="btn-ghost" title="Mode Ekstraksi Massal">
+          <i data-lucide="layers"></i>
+          <span>Batch Queue</span>
+        </button>
+        <button id="btn-theme-toggle" class="btn-icon" title="Ganti Tema">
+          <i data-lucide="moon" id="theme-icon"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Wrapper -->
+  <main class="main-wrapper">
+
+    <!-- ========================================================================= -->
+    <!-- SECTION 1: WEB URL CRAWLER (DEFAULT MODE)                                -->
+    <!-- ========================================================================= -->
+    <div id="mode-web-container" class="mode-view active">
+      <section class="hero-section">
+        <div class="hero-content">
+          <div class="status-pill">
+            <span class="pulse-indicator"></span>
+            <span>Universal HTML & JS Deep Extractor Engine Active</span>
+          </div>
+          <h1 class="hero-title">Ekstrak Data Kampus Instan dari <span class="highlight-text">Link Apa Saja</span></h1>
+          <p class="hero-desc">
+            Paste URL website kampus atau halaman PMB/Fakultas manapun. CampusMiner secara otomatis membedah struktur web, mendeteksi Fakultas, Program Studi, Akreditasi, Biaya Kuliah, Kontak, Dokumen PDF, hingga data tabel dalam hitungan detik.
+          </p>
+
+          <!-- Crawler Input Box -->
+          <div class="crawler-box-container">
+            <form id="crawler-form" class="crawler-form">
+              <div class="input-wrapper">
+                <i data-lucide="globe" class="input-icon"></i>
+                <input 
+                  type="url" 
+                  id="target-url-input" 
+                  placeholder="Paste URL kampus (contoh: https://ui.ac.id atau https://ugm.ac.id/id/akademik/)..." 
+                  required
+                  autocomplete="off"
+                />
+                <button type="button" id="btn-paste-clipboard" class="btn-inner-action" title="Paste dari Clipboard">
+                  <i data-lucide="clipboard"></i> Paste
+                </button>
+                <button type="button" id="btn-clear-input" class="btn-inner-action hidden" title="Clear input">
+                  <i data-lucide="x"></i>
+                </button>
+              </div>
+              
+              <div class="crawler-action-bar">
+                <div class="crawler-options">
+                  <label class="toggle-control" title="Ekstrak hierarki prodi & fakultas secara cerdas">
+                    <input type="checkbox" id="opt-smart-campus" checked>
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-label">Smart AI Campus Parser</span>
+                  </label>
+                  <label class="toggle-control" title="Pindai seluruh tabel & dokumen PDF terlampir">
+                    <input type="checkbox" id="opt-extract-assets" checked>
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-label">Miner Tabel & Brosur PDF</span>
+                  </label>
+                </div>
+
+                <div class="submit-wrapper">
+                  <button type="submit" id="btn-start-crawl" class="btn-primary">
+                    <i data-lucide="zap"></i>
+                    <span>Ekstrak Data Sekarang</span>
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- SECTION 2: CRAWL PDF / WORD (NEW DEDICATED MODE)                         -->
+    <!-- ========================================================================= -->
+    <div id="mode-doc-container" class="mode-view hidden">
+      <section class="hero-section">
+        <div class="hero-content">
+          <div class="status-pill status-pill-amber">
+            <span class="pulse-indicator pulse-amber"></span>
+            <span>Document AI Engine: PDF.js & Mammoth Parser Active</span>
+          </div>
+          <h1 class="hero-title">Ekstraksi & Analisis Dokumen <span class="highlight-text-amber">PDF & Word (.docx)</span></h1>
+          <p class="hero-desc">
+            Ambil seluruh isi brosur pendaftaran, pedoman biaya UKT, kalender akademik, atau SK akreditasi kampus. Paste link URL file atau upload langsung untuk membedah halaman, tabel, dan entitas kampus secara cerdas.
+          </p>
+
+          <!-- Document Extractor Container -->
+          <div class="crawler-box-container">
+            
+            <!-- Doc Source Tabs -->
+            <div class="doc-input-tabs">
+              <button type="button" id="tab-doc-upload" class="doc-source-tab active">
+                <i data-lucide="upload-cloud"></i> Upload Berkas (PDF / Word)
+              </button>
+              <button type="button" id="tab-doc-url" class="doc-source-tab">
+                <i data-lucide="link"></i> Paste Link URL Dokumen
+              </button>
+            </div>
+
+            <!-- Panel 1: Drag & Drop Local File -->
+            <div id="doc-panel-upload" class="doc-panel active">
+              <div class="dropzone-area" id="doc-dropzone">
+                <input type="file" id="doc-file-input" accept=".pdf,.docx,.doc,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="hidden-file-input">
+                <div class="dropzone-icon">
+                  <i data-lucide="file-up"></i>
+                </div>
+                <h3 class="dropzone-title">Tarik & Lepas Berkas Dokumen ke Sini</h3>
+                <p class="dropzone-sub">Mendukung format <strong>.PDF</strong> dan <strong>.DOCX (Word)</strong> hingga 50 MB</p>
+                <button type="button" class="btn-primary-sm mt-2" onclick="document.getElementById('doc-file-input').click()">
+                  <i data-lucide="folder-open"></i> Pilih Berkas dari Komputer
+                </button>
+              </div>
+            </div>
+
+            <!-- Panel 2: Direct Document URL -->
+            <div id="doc-panel-url" class="doc-panel hidden">
+              <form id="doc-url-form" class="crawler-form">
+                <div class="input-wrapper">
+                  <i data-lucide="file-down" class="input-icon"></i>
+                  <input 
+                    type="url" 
+                    id="doc-url-input" 
+                    placeholder="Paste link direct PDF/DOCX (contoh: https://pmb.kampus.ac.id/brosur-biaya-2025.pdf)..." 
+                    autocomplete="off"
+                  />
+                  <button type="button" id="btn-paste-doc-url" class="btn-inner-action" title="Paste Link">
+                    <i data-lucide="clipboard"></i> Paste
+                  </button>
+                </div>
+                <div class="submit-wrapper mt-2">
+                  <button type="submit" id="btn-start-doc-url" class="btn-primary">
+                    <i data-lucide="scan-line"></i>
+                    <span>Unduh & Ekstrak Dokumen</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- SECTION 3: KNOWLEDGE EXTRACTOR & CHATBOT DATASET SYNTHESIZER              -->
+    <!-- ========================================================================= -->
+    <div id="mode-knowledge-container" class="mode-view hidden">
+      <section class="hero-section">
+        <div class="hero-content">
+          <div class="status-pill status-pill-indigo">
+            <span class="pulse-indicator pulse-indigo"></span>
+            <span>NLP Intent Synthesizer & Multimodal OCR Active</span>
+          </div>
+          <h1 class="hero-title">Knowledge Base & Chatbot <span class="highlight-text-indigo">Dataset Extractor</span></h1>
+          <p class="hero-desc">
+            Ubah teks bebas, kebijakan kampus, brosur gambar/pamflet, atau dokumen PDF menjadi <strong>Knowledge Base Chatbot</strong> siap pakai. Sistem otomatis mengekstrak kata kunci pemicu (trigger keywords), variasi pertanyaan, fakta berbobot, serta Q&amp;A pairs tanpa halusinasi.
+          </p>
+
+          <!-- Knowledge Input Multi-Mode Box -->
+          <div class="crawler-box-container">
+            <!-- Sub-tabs -->
+            <div class="doc-source-tabs">
+              <button id="tab-kb-text" class="source-tab active">
+                <i data-lucide="edit-3"></i>
+                <span>Paste Teks Bebas</span>
+              </button>
+              <button id="tab-kb-file" class="source-tab">
+                <i data-lucide="file-up"></i>
+                <span>Upload File / Gambar (OCR)</span>
+              </button>
+              <button id="tab-kb-url" class="source-tab">
+                <i data-lucide="globe"></i>
+                <span>Dari URL Link</span>
+              </button>
+            </div>
+
+            <!-- Panel 1: Paste Text -->
+            <div id="kb-panel-text" class="doc-panel active">
+              <form id="kb-text-form" class="crawler-form">
+                <div class="textarea-wrapper">
+                  <textarea 
+                    id="kb-text-input" 
+                    rows="7" 
+                    placeholder="Paste teks informasi kampus di sini (contoh: FAQ PMB, rincian biaya UKT, syarat pendaftaran, kebijakan beasiswa, kontak prodi, dsb)..." 
+                    required
+                  ></textarea>
+                </div>
+                <div class="kb-action-bar">
+                  <div class="kb-char-count">
+                    <span id="kb-text-chars">0</span> karakter • <span id="kb-text-words">0</span> kata
+                  </div>
+                  <button type="submit" id="btn-extract-kb-text" class="btn-primary-indigo">
+                    <i data-lucide="brain-circuit"></i>
+                    <span>Ekstrak Knowledge Base Chatbot</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Panel 2: File / Image OCR Upload -->
+            <div id="kb-panel-file" class="doc-panel hidden">
+              <div class="doc-dropzone" id="kb-dropzone">
+                <input type="file" id="kb-file-input" class="file-input-hidden" accept=".png,.jpg,.jpeg,.webp,.pdf,.docx,.doc,.txt,.md,.csv,.json">
+                <div class="dropzone-inner">
+                  <div class="dropzone-icon dropzone-icon-indigo">
+                    <i data-lucide="scan"></i>
+                  </div>
+                  <h3>Drop File atau Gambar di sini</h3>
+                  <p class="dropzone-sub">Mendukung Gambar (<strong>.PNG, .JPG, .WEBP</strong> dengan OCR), Dokumen <strong>.PDF, .DOCX</strong>, atau <strong>.TXT</strong></p>
+                  <button type="button" class="btn-outline-indigo" onclick="document.getElementById('kb-file-input').click()">
+                    <i data-lucide="folder-open"></i> Pilih Berkas Komputer
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Panel 3: URL Direct Scraping to Knowledge -->
+            <div id="kb-panel-url" class="doc-panel hidden">
+              <form id="kb-url-form" class="crawler-form">
+                <div class="input-wrapper">
+                  <i data-lucide="globe" class="input-icon"></i>
+                  <input 
+                    type="url" 
+                    id="kb-url-input" 
+                    placeholder="Paste link URL kampus yang ingin diubah menjadi dataset chatbot..." 
+                    autocomplete="off"
+                  />
+                  <button type="button" id="btn-paste-kb-url" class="btn-inner-action" title="Paste Link">
+                    <i data-lucide="clipboard"></i> Paste
+                  </button>
+                </div>
+                <div class="submit-wrapper mt-2">
+                  <button type="submit" id="btn-start-kb-url" class="btn-primary-indigo">
+                    <i data-lucide="sparkles"></i>
+                    <span>Scrape & Ekstrak Knowledge Base</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- REAL-TIME TELEMETRY & PROGRESS                                           -->
+    <!-- ========================================================================= -->
+    <section id="telemetry-section" class="telemetry-section hidden">
+      <div class="telemetry-card">
+        <div class="telemetry-header">
+          <div class="spinner-group">
+            <div class="crawler-spinner"></div>
+            <div>
+              <h3 id="telemetry-status-text">Menghubungkan ke target...</h3>
+              <p id="telemetry-url-text" class="telemetry-sub"></p>
+            </div>
+          </div>
+          <button id="btn-cancel-crawl" class="btn-danger-sm">
+            <i data-lucide="square"></i> Batal
+          </button>
+        </div>
+
+        <div class="progress-bar-container">
+          <div id="progress-bar-fill" class="progress-bar-fill" style="width: 15%;"></div>
+        </div>
+
+        <div class="telemetry-logs" id="telemetry-logs">
+          <div class="log-item"><span class="log-time">00:00</span> <span class="log-tag">INIT</span> Memulai pipeline ekstraksi...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Error State Container -->
+    <section id="error-section" class="error-section hidden">
+      <div class="error-card">
+        <div class="error-icon"><i data-lucide="alert-triangle"></i></div>
+        <div class="error-body">
+          <h3 id="error-title">Gagal Mengambil Data</h3>
+          <p id="error-message">Target tidak dapat diakses atau diblokir proteksi keamanan.</p>
+          <div class="error-actions">
+            <button id="btn-retry-crawl" class="btn-primary-sm"><i data-lucide="rotate-cw"></i> Coba Ulang</button>
+            <button id="btn-manual-html-modal" class="btn-ghost-sm"><i data-lucide="file-code"></i> Paste Raw HTML Manual</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- WORKSPACE 1: WEB SCRAPE RESULTS                                          -->
+    <!-- ========================================================================= -->
+    <section id="workspace-section" class="workspace-section hidden">
+      
+      <!-- Top Overview Bar -->
+      <div class="workspace-header-card">
+        <div class="campus-identity-row">
+          <div class="campus-avatar" id="campus-avatar">
+            <i data-lucide="school"></i>
+          </div>
+          <div class="campus-title-block">
+            <div class="title-with-badges">
+              <h2 id="res-campus-name">Nama Kampus</h2>
+              <span id="res-badge-type" class="badge-tag badge-ptn">PTN / PTS</span>
+              <span id="res-badge-akreditasi" class="badge-tag badge-akreditasi">Akreditasi Unggul</span>
+            </div>
+            <p id="res-campus-motto" class="campus-motto">"Motto atau deskripsi ringkas kampus"</p>
+            <div class="campus-meta-links">
+              <a id="res-target-link" href="#" target="_blank" rel="noopener noreferrer" class="link-item">
+                <i data-lucide="external-link"></i> <span id="res-target-link-text">https://...</span>
+              </a>
+              <span class="bullet-separator">•</span>
+              <span class="meta-item"><i data-lucide="clock"></i> Diekstrak: <strong id="res-crawl-timestamp">Baru saja</strong></span>
+              <span class="bullet-separator">•</span>
+              <span class="meta-item"><i data-lucide="hard-drive"></i> Ukuran: <strong id="res-payload-size">0 KB</strong></span>
+            </div>
+          </div>
+
+          <!-- Export Actions -->
+          <div class="workspace-export-group">
+            <div class="export-dropdown-wrapper">
+              <button id="btn-export-main" class="btn-export-primary">
+                <i data-lucide="download"></i>
+                <span>Export Data</span>
+                <i data-lucide="chevron-down" class="chevron-icon"></i>
+              </button>
+              <div id="export-dropdown-menu" class="export-dropdown-menu hidden">
+                <button class="dropdown-item" id="act-export-excel">
+                  <i data-lucide="file-spreadsheet" class="icon-excel"></i>
+                  <div class="dropdown-text">
+                    <span class="dropdown-title">Excel Spreadsheet (.xlsx)</span>
+                    <span class="dropdown-sub">Multi-sheet: Profil, Prodi, Kontak, Tabel</span>
+                  </div>
+                </button>
+                <button class="dropdown-item" id="act-export-json">
+                  <i data-lucide="braces" class="icon-json"></i>
+                  <div class="dropdown-text">
+                    <span class="dropdown-title">JSON Full Dataset (.json)</span>
+                    <span class="dropdown-sub">Format struktur lengkap siap API / Database</span>
+                  </div>
+                </button>
+                <button class="dropdown-item" id="act-export-csv">
+                  <i data-lucide="file-text" class="icon-csv"></i>
+                  <div class="dropdown-text">
+                    <span class="dropdown-title">CSV Prodi & Fakultas (.csv)</span>
+                    <span class="dropdown-sub">Daftar terstruktur untuk spreadsheet</span>
+                  </div>
+                </button>
+                <button class="dropdown-item" id="act-export-markdown">
+                  <i data-lucide="file-code-2" class="icon-md"></i>
+                  <div class="dropdown-text">
+                    <span class="dropdown-title">Markdown Report (.md)</span>
+                    <span class="dropdown-sub">Dokumen lengkap siap dokumentasi / Obsidian</span>
+                  </div>
+                </button>
+                <div class="dropdown-divider"></div>
+                <button class="dropdown-item" id="act-copy-summary">
+                  <i data-lucide="copy"></i>
+                  <div class="dropdown-text">
+                    <span class="dropdown-title">Copy Ringkasan Teks</span>
+                    <span class="dropdown-sub">Salin ke clipboard untuk chat / laporan</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <button id="btn-new-scrape" class="btn-ghost-sm" title="Scrape URL Lain">
+              <i data-lucide="plus"></i> URL Baru
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Stats Grid -->
+        <div class="stats-overview-grid">
+          <div class="stat-box" data-target-tab="tab-faculties">
+            <div class="stat-icon-wrapper icon-purple">
+              <i data-lucide="book-open"></i>
+            </div>
+            <div class="stat-details">
+              <span class="stat-number" id="stat-faculties-count">0</span>
+              <span class="stat-label">Fakultas / Sekolah</span>
+            </div>
+          </div>
+
+          <div class="stat-box" data-target-tab="tab-faculties">
+            <div class="stat-icon-wrapper icon-blue">
+              <i data-lucide="graduation-cap"></i>
+            </div>
+            <div class="stat-details">
+              <span class="stat-number" id="stat-prodi-count">0</span>
+              <span class="stat-label">Program Studi</span>
+            </div>
+          </div>
+
+          <div class="stat-box" data-target-tab="tab-tuition">
+            <div class="stat-icon-wrapper icon-green">
+              <i data-lucide="banknote"></i>
+            </div>
+            <div class="stat-details">
+              <span class="stat-number" id="stat-tuition-count">0</span>
+              <span class="stat-label">Data Biaya / PMB</span>
+            </div>
+          </div>
+
+          <div class="stat-box" data-target-tab="tab-contacts">
+            <div class="stat-icon-wrapper icon-amber">
+              <i data-lucide="phone-call"></i>
+            </div>
+            <div class="stat-details">
+              <span class="stat-number" id="stat-contacts-count">0</span>
+              <span class="stat-label">Kontak & Portal</span>
+            </div>
+          </div>
+
+          <div class="stat-box" data-target-tab="tab-documents">
+            <div class="stat-icon-wrapper icon-red">
+              <i data-lucide="file-down"></i>
+            </div>
+            <div class="stat-details">
+              <span class="stat-number" id="stat-docs-count">0</span>
+              <span class="stat-label">Brosur & File PDF</span>
+            </div>
+          </div>
+
+          <div class="stat-box" data-target-tab="tab-images">
+            <div class="stat-icon-wrapper icon-purple">
+              <i data-lucide="image"></i>
+            </div>
+            <div class="stat-details">
+              <span class="stat-number" id="stat-images-count">0</span>
+              <span class="stat-label">Brosur Gambar & OCR</span>
+            </div>
+          </div>
+
+          <div class="stat-box" data-target-tab="tab-tables">
+            <div class="stat-icon-wrapper icon-teal">
+              <i data-lucide="table"></i>
+            </div>
+            <div class="stat-details">
+              <span class="stat-number" id="stat-tables-count">0</span>
+              <span class="stat-label">Tabel Terdeteksi</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Tabbed Navigation Container -->
+      <div class="workspace-tabs-container">
+        <div class="tabs-nav-bar">
+          <button class="tab-btn active" data-tab="tab-overview">
+            <i data-lucide="layout-grid"></i> Ringkasan Profil
+          </button>
+          <button class="tab-btn" data-tab="tab-faculties">
+            <i data-lucide="book-open"></i> Fakultas & Prodi (<span id="tab-badge-prodi">0</span>)
+          </button>
+          <button class="tab-btn" data-tab="tab-tuition">
+            <i data-lucide="coins"></i> Biaya & PMB (<span id="tab-badge-tuition">0</span>)
+          </button>
+          <button class="tab-btn" data-tab="tab-contacts">
+            <i data-lucide="contact"></i> Kontak & Sosmed (<span id="tab-badge-contacts">0</span>)
+          </button>
+          <button class="tab-btn" data-tab="tab-documents">
+            <i data-lucide="file-text"></i> Dokumen & PDF (<span id="tab-badge-docs">0</span>)
+          </button>
+          <button class="tab-btn" data-tab="tab-images">
+            <i data-lucide="image"></i> Brosur Gambar & OCR (<span id="tab-badge-images">0</span>)
+          </button>
+          <button class="tab-btn" data-tab="tab-tables">
+            <i data-lucide="table"></i> Tabel Data (<span id="tab-badge-tables">0</span>)
+          </button>
+          <button class="tab-btn" data-tab="tab-content">
+            <i data-lucide="file-type-2"></i> Teks Bersih
+          </button>
+          <button class="tab-btn" data-tab="tab-metadata">
+            <i data-lucide="code"></i> Raw & Schema.org
+          </button>
+        </div>
+
+        <!-- TAB CONTENT: 1. OVERVIEW -->
+        <div id="tab-overview" class="tab-pane active">
+          <div class="grid-2-col">
+            <div class="content-card">
+              <div class="card-header">
+                <h3><i data-lucide="landmark"></i> Identitas & Profil Institusi</h3>
+                <button class="btn-icon-sm" id="btn-copy-overview-card" title="Copy Profil">
+                  <i data-lucide="copy"></i>
+                </button>
+              </div>
+              <div class="card-body">
+                <table class="detail-table">
+                  <tbody>
+                    <tr>
+                      <td class="cell-label">Nama Resmi</td>
+                      <td class="cell-value" id="dt-name">-</td>
+                    </tr>
+                    <tr>
+                      <td class="cell-label">Singkatan / Akronim</td>
+                      <td class="cell-value" id="dt-acronym">-</td>
+                    </tr>
+                    <tr>
+                      <td class="cell-label">Status Institusi</td>
+                      <td class="cell-value" id="dt-status">-</td>
+                    </tr>
+                    <tr>
+                      <td class="cell-label">Peringkat Akreditasi</td>
+                      <td class="cell-value" id="dt-akreditasi">-</td>
+                    </tr>
+                    <tr>
+                      <td class="cell-label">Rektor / Pimpinan</td>
+                      <td class="cell-value" id="dt-rektor">-</td>
+                    </tr>
+                    <tr>
+                      <td class="cell-label">Tahun Berdiri</td>
+                      <td class="cell-value" id="dt-founded">-</td>
+                    </tr>
+                    <tr>
+                      <td class="cell-label">Lokasi Kampus</td>
+                      <td class="cell-value" id="dt-location">-</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div class="profile-summary-box">
+                  <h4>Ringkasan Deskripsi Halaman:</h4>
+                  <p id="dt-description">Tidak ada deskripsi meta khusus yang ditemukan.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="content-card">
+              <div class="card-header">
+                <h3><i data-lucide="map-pin"></i> Akses & Kontak Utama</h3>
+              </div>
+              <div class="card-body">
+                <div class="contact-quick-list" id="overview-contacts-list"></div>
+                <h4 class="mt-4 mb-2">Portal Sistem Informasi Kampus</h4>
+                <div class="portal-badges" id="overview-portals-list"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB CONTENT: 2. FAKULTAS & PRODI -->
+        <div id="tab-faculties" class="tab-pane">
+          <div class="content-card">
+            <div class="card-header-bar">
+              <div class="search-filter-row">
+                <div class="search-input-wrap">
+                  <i data-lucide="search"></i>
+                  <input type="text" id="filter-prodi-input" placeholder="Cari Program Studi, Fakultas, atau Jenjang...">
+                </div>
+                <div class="filter-pills" id="jenjang-filter-pills">
+                  <button class="filter-chip active" data-filter="all">Semua</button>
+                  <button class="filter-chip" data-filter="D3">D3</button>
+                  <button class="filter-chip" data-filter="D4">D4 / Sarjana Terapan</button>
+                  <button class="filter-chip" data-filter="S1">S1 / Sarjana</button>
+                  <button class="filter-chip" data-filter="S2">S2 / Magister</button>
+                  <button class="filter-chip" data-filter="S3">S3 / Doktor</button>
+                  <button class="filter-chip" data-filter="Profesi">Profesi / Spesialis</button>
+                </div>
+              </div>
+              <div class="card-actions">
+                <button id="btn-export-prodi-csv" class="btn-ghost-sm">
+                  <i data-lucide="file-spreadsheet"></i> Export List Prodi (CSV)
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="faculties-container" class="faculties-tree-view"></div>
+              <div id="prodi-empty-state" class="empty-state hidden">
+                <i data-lucide="search-x"></i>
+                <p>Tidak ada program studi yang cocok dengan kata kunci pencarian.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB CONTENT: 3. BIAYA & PMB -->
+        <div id="tab-tuition" class="tab-pane">
+          <div class="content-card">
+            <div class="card-header">
+              <div>
+                <h3><i data-lucide="coins"></i> Informasi Biaya Kuliah, UKT & Jalur Masuk</h3>
+                <p class="card-subtitle">Hasil ekstraksi tabel nominal, klaster UKT, jalur seleksi, beasiswa, dan periode pendaftaran.</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="tuition-items-container" class="tuition-grid"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB CONTENT: 4. KONTAK & SOSMED -->
+        <div id="tab-contacts" class="tab-pane">
+          <div class="grid-2-col">
+            <div class="content-card">
+              <div class="card-header">
+                <h3><i data-lucide="phone"></i> Nomor Telepon, WhatsApp & Email</h3>
+              </div>
+              <div class="card-body">
+                <div id="contacts-full-list" class="contacts-directory"></div>
+              </div>
+            </div>
+            <div class="content-card">
+              <div class="card-header">
+                <h3><i data-lucide="share-2"></i> Media Sosial & Portal Digital</h3>
+              </div>
+              <div class="card-body">
+                <div id="socials-full-list" class="socials-grid"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB CONTENT: 5. DOKUMEN & PDF -->
+        <div id="tab-documents" class="tab-pane">
+          <div class="content-card">
+            <div class="card-header-bar">
+              <div>
+                <h3><i data-lucide="file-text"></i> Dokumen, Brosur PMB & File Terlampir</h3>
+                <p class="card-subtitle">Semua file PDF, DOCX, XLS yang ditemukan di dalam halaman web target.</p>
+              </div>
+              <div class="search-input-wrap">
+                <i data-lucide="search"></i>
+                <input type="text" id="filter-docs-input" placeholder="Filter nama berkas...">
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="data-table" id="docs-data-table">
+                  <thead>
+                    <tr>
+                      <th>Tipe</th>
+                      <th>Nama / Judul Dokumen</th>
+                      <th>Link Unduhan Langsung</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="docs-table-body"></tbody>
+                </table>
+              </div>
+              <div id="docs-empty-state" class="empty-state hidden">
+                <i data-lucide="file-x"></i>
+                <p>Tidak ditemukan tautan berkas dokumen PDF/Word pada halaman ini.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB CONTENT: BROSUR GAMBAR & VISION OCR -->
+        <div id="tab-images" class="tab-pane">
+          <div class="content-card">
+            <div class="card-header">
+              <div>
+                <h3><i data-lucide="image"></i> Brosur Gambar, Pamflet & Asset Visual (<span id="images-total-count">0</span>)</h3>
+                <p class="card-subtitle">Semua gambar, pamflet PMB, banner, dan infografis di web. Klik <strong>"Baca Teks (OCR)"</strong> untuk membaca isi tulisan di dalam gambar secara instan.</p>
+              </div>
+              <div class="card-actions-right">
+                <input type="text" id="filter-web-images-input" class="search-mini-input" placeholder="Filter brosur / gambar...">
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="web-images-grid" class="web-images-grid"></div>
+              <div id="web-images-empty-state" class="empty-state hidden">
+                <i data-lucide="image-off"></i>
+                <p>Tidak ada gambar yang ditemukan pada halaman ini.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB CONTENT: 6. TABEL DATA -->
+        <div id="tab-tables" class="tab-pane">
+          <div class="content-card">
+            <div class="card-header-bar">
+              <div>
+                <h3><i data-lucide="table"></i> Tabel HTML Terdeteksi (<span id="tables-total-count">0</span>)</h3>
+                <p class="card-subtitle">Seluruh tabel HTML pada halaman diekstrak dan dapat diexport langsung ke Excel/CSV.</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="tables-container" class="html-tables-wrapper"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB CONTENT: 7. TEKS BERSIH -->
+        <div id="tab-content" class="tab-pane">
+          <div class="content-card">
+            <div class="card-header">
+              <div>
+                <h3><i data-lucide="align-left"></i> Artikel & Teks Bersih (Clean Reader)</h3>
+                <p class="card-subtitle">Konten teks utama yang telah dibersihkan dari navigasi, footer, dan iklan.</p>
+              </div>
+              <div class="action-buttons-wrap">
+                <button id="btn-copy-clean-text" class="btn-ghost-sm"><i data-lucide="copy"></i> Copy Teks</button>
+                <button id="btn-copy-markdown-text" class="btn-ghost-sm"><i data-lucide="file-code"></i> Copy Markdown</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="clean-text-reader" id="clean-text-body"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB CONTENT: 8. RAW & SCHEMA.ORG -->
+        <div id="tab-metadata" class="tab-pane">
+          <div class="content-card">
+            <div class="card-header">
+              <div>
+                <h3><i data-lucide="braces"></i> Raw Data, Schema.org (JSON-LD) & OpenGraph</h3>
+                <p class="card-subtitle">Data terstruktur mesin pencari, meta tag, dan dump JSON lengkap.</p>
+              </div>
+              <button id="btn-copy-json-dump" class="btn-ghost-sm"><i data-lucide="copy"></i> Copy JSON</button>
+            </div>
+            <div class="card-body">
+              <div class="code-block-container">
+                <pre><code id="raw-json-viewer" class="code-viewer">{}</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- WORKSPACE 2: DOCUMENT (PDF / WORD) EXTRACTION RESULTS                     -->
+    <!-- ========================================================================= -->
+    <section id="doc-workspace-section" class="workspace-section hidden">
+      
+      <!-- Top Overview Bar for Document -->
+      <div class="workspace-header-card">
+        <div class="campus-identity-row">
+          <div class="campus-avatar doc-avatar" id="doc-avatar">
+            <i data-lucide="file-text"></i>
+          </div>
+          <div class="campus-title-block">
+            <div class="title-with-badges">
+              <h2 id="res-doc-title">Nama Dokumen</h2>
+              <span id="res-doc-format-badge" class="badge-tag badge-ptn">PDF</span>
+              <span id="res-doc-campus-badge" class="badge-tag badge-akreditasi">Kampus Terdeteksi</span>
+            </div>
+            <p id="res-doc-sub" class="campus-motto">Analisis otomatis isi berkas brosur / pedoman akademik / SK</p>
+            <div class="campus-meta-links">
+              <span class="meta-item"><i data-lucide="file"></i> Berkas: <strong id="res-doc-filename">-</strong></span>
+              <span class="bullet-separator">•</span>
+              <span class="meta-item"><i data-lucide="layers"></i> Total: <strong id="res-doc-pages">0 Halaman</strong></span>
+              <span class="bullet-separator">•</span>
+              <span class="meta-item"><i data-lucide="hard-drive"></i> Ukuran: <strong id="res-doc-size">0 KB</strong></span>
+            </div>
+          </div>
+
+          <!-- Document Export Actions -->
+          <div class="workspace-export-group">
+            <div class="export-dropdown-wrapper">
+              <button id="btn-export-doc-main" class="btn-export-primary">
+                <i data-lucide="download"></i>
+                <span>Export Data Dokumen</span>
+                <i data-lucide="chevron-down" class="chevron-icon"></i>
+              </button>
+              <div id="export-doc-dropdown-menu" class="export-dropdown-menu hidden">
+                <button class="dropdown-item" id="act-doc-export-excel">
+                  <i data-lucide="file-spreadsheet" class="icon-excel"></i>
+                  <div class="dropdown-text">
+                    <span class="dropdown-title">Excel Spreadsheet (.xlsx)</span>
+                    <span class="dropdown-sub">Multi-sheet: Entitas, Prodi, Tabel Dokumen</span>
+                  </div>
+                </button>
+                <button class="dropdown-item" id="act-doc-export-json">
+                  <i data-lucide="braces" class="icon-json"></i>
+                  <div class="dropdown-text">
+                    <span class="dropdown-title">JSON Dataset (.json)</span>
+                    <span class="dropdown-sub">Format struktur lengkap hasil ekstraksi dokumen</span>
+                  </div>
+                </button>
+                <button class="dropdown-item" id="act-doc-export-csv">
+                  <i data-lucide="file-text" class="icon-csv"></i>
+                  <div class="dropdown-text">
+                    <span class="dropdown-title">CSV Prodi Dokumen (.csv)</span>
+                    <span class="dropdown-sub">Daftar prodi yang ditemukan dalam dokumen</span>
+                  </div>
+                </button>
+                <button class="dropdown-item" id="act-doc-export-markdown">
+                  <i data-lucide="file-code-2" class="icon-md"></i>
+                  <div class="dropdown-text">
+                    <span class="dropdown-title">Markdown Dokumen (.md)</span>
+                    <span class="dropdown-sub">Teks terstruktur siap laporan</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <button id="btn-new-doc-scrape" class="btn-ghost-sm" title="Analisis Dokumen Baru">
+              <i data-lucide="plus"></i> Dokumen Baru
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Doc Stats Grid -->
+        <div class="stats-overview-grid">
+          <div class="stat-box" data-target-tab="tab-doc-entities">
+            <div class="stat-icon-wrapper icon-purple">
+              <i data-lucide="landmark"></i>
+            </div>
+            <div class="stat-details">
+              <span class="stat-number" id="stat-doc-campus-name">-</span>
+              <span class="stat-label">Institusi Terdeteksi</span>
+            </div>
+          </div>
+
+          <div class="stat-box" data-target-tab="tab-doc-entities">
+            <div class="stat-icon-wrapper icon-blue">
+              <i data-lucide="graduation-cap"></i>
+            </div>
+            <div class="stat-details">
+              <span class="stat-number" id="stat-doc-prodi-count">0</span>
+              <span class="stat-label">Program Studi</span>
+            </div>
+          </div>
+
+          <div class="stat-box" data-target-tab="tab-doc-entities">
+            <div class="stat-icon-wrapper icon-green">
+              <i data-lucide="banknote"></i>
+            </div>
+            <div class="stat-details">
+              <span class="stat-number" id="stat-doc-tuition-count">0</span>
+              <span class="stat-label">Nominal Biaya / UKT</span>
+            </div>
+          </div>
+
+          <div class="stat-box" data-target-tab="tab-doc-tables">
+            <div class="stat-icon-wrapper icon-teal">
+              <i data-lucide="table"></i>
+            </div>
+            <div class="stat-details">
+              <span class="stat-number" id="stat-doc-tables-count">0</span>
+              <span class="stat-label">Tabel dalam Dokumen</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Document Tabbed Navigation -->
+      <div class="workspace-tabs-container">
+        <div class="tabs-nav-bar" id="doc-tabs-nav-bar">
+          <button class="tab-btn active" data-tab="tab-doc-entities">
+            <i data-lucide="brain-circuit"></i> Entitas & Temuan Kampus
+          </button>
+          <button class="tab-btn" data-tab="tab-doc-reader">
+            <i data-lucide="book-open"></i> Pembaca Halaman (<span id="doc-tab-badge-pages">0</span> Hal)
+          </button>
+          <button class="tab-btn" data-tab="tab-doc-tables">
+            <i data-lucide="table"></i> Tabel Data Dokumen (<span id="doc-tab-badge-tables">0</span>)
+          </button>
+          <button class="tab-btn" data-tab="tab-doc-raw">
+            <i data-lucide="file-code"></i> Teks Utuh & Markdown
+          </button>
+        </div>
+
+        <!-- DOC TAB 1: Entitas Kampus -->
+        <div id="tab-doc-entities" class="tab-pane active">
+          <div class="grid-2-col">
+            <div class="content-card">
+              <div class="card-header">
+                <h3><i data-lucide="landmark"></i> Identitas Kampus & Dasar Hukum Dokumen</h3>
+              </div>
+              <div class="card-body">
+                <table class="detail-table">
+                  <tbody>
+                    <tr>
+                      <td class="cell-label">Nama Kampus</td>
+                      <td class="cell-value" id="dt-doc-name">-</td>
+                    </tr>
+                    <tr>
+                      <td class="cell-label">Status Institusi</td>
+                      <td class="cell-value" id="dt-doc-status">-</td>
+                    </tr>
+                    <tr>
+                      <td class="cell-label">Peringkat Akreditasi</td>
+                      <td class="cell-value" id="dt-doc-akreditasi">-</td>
+                    </tr>
+                    <tr>
+                      <td class="cell-label">Nomor SK / Legalitas</td>
+                      <td class="cell-value" id="dt-doc-sk">-</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <h4 class="mt-4 mb-2">Kontak Tertera dalam Dokumen:</h4>
+                <div id="doc-contacts-list" class="contacts-directory"></div>
+              </div>
+            </div>
+
+            <div class="content-card">
+              <div class="card-header">
+                <h3><i data-lucide="coins"></i> Temuan Biaya / UKT dalam Dokumen</h3>
+              </div>
+              <div class="card-body">
+                <div id="doc-tuition-list" class="tuition-grid"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="content-card mt-4">
+            <div class="card-header-bar">
+              <div>
+                <h3><i data-lucide="graduation-cap"></i> Program Studi & Fakultas yang Ditemukan (<span id="doc-prodi-total-badge">0</span>)</h3>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="doc-prodi-container" class="prodi-list-grid"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DOC TAB 2: Pembaca Halaman Multi-Page -->
+        <div id="tab-doc-reader" class="tab-pane">
+          <div class="content-card">
+            <div class="card-header-bar">
+              <div class="doc-reader-controls">
+                <div class="search-input-wrap">
+                  <i data-lucide="search"></i>
+                  <input type="text" id="doc-search-input" placeholder="Cari kata kunci dalam dokumen (cth: Biaya, Akreditasi, Teknik)...">
+                </div>
+                <div class="page-selector-wrap">
+                  <span>Halaman:</span>
+                  <select id="doc-page-select" class="custom-select"></select>
+                </div>
+              </div>
+              <div class="action-buttons-wrap">
+                <button id="btn-prev-doc-page" class="btn-ghost-sm"><i data-lucide="chevron-left"></i> Prev</button>
+                <button id="btn-next-doc-page" class="btn-ghost-sm">Next <i data-lucide="chevron-right"></i></button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="doc-page-content-box" id="doc-current-page-text">
+                Pilih atau muat dokumen untuk membaca halaman.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DOC TAB 3: Tabel Data Dokumen -->
+        <div id="tab-doc-tables" class="tab-pane">
+          <div class="content-card">
+            <div class="card-header-bar">
+              <div>
+                <h3><i data-lucide="table"></i> Tabel Data dalam Dokumen (<span id="doc-tables-count-title">0</span>)</h3>
+                <p class="card-subtitle">Semua tabel dari PDF / Word berhasil dikonversi ke format tabular.</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="doc-tables-container" class="html-tables-wrapper"></div>
+            </div>
+          </div>
+              <!-- DOC TAB 4: Raw Text & Markdown -->
+        <div id="tab-doc-raw" class="tab-pane">
+          <div class="content-card">
+            <div class="card-header">
+              <div>
+                <h3><i data-lucide="file-code"></i> Teks Utuh & Markdown Dokumen</h3>
+              </div>
+              <button id="btn-copy-doc-fulltext" class="btn-ghost-sm"><i data-lucide="copy"></i> Copy Seluruh Teks</button>
+            </div>
+            <div class="card-body">
+              <div class="clean-text-reader" id="doc-fulltext-viewer"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- SECTION 3 WORKSPACE: KNOWLEDGE BASE & CHATBOT DATASET VIEWER              -->
+    <!-- ========================================================================= -->
+    <section id="knowledge-workspace-section" class="workspace-section hidden">
+      <!-- Knowledge Header Card -->
+      <div class="workspace-header-card">
+        <div class="campus-identity-row">
+          <div class="campus-avatar logo-indigo">
+            <i data-lucide="brain"></i>
+          </div>
+          <div class="campus-title-block">
+            <div class="title-with-badges">
+              <h2 id="res-kb-title">Dataset Chatbot & Knowledge Base</h2>
+              <span class="badge-tag badge-ai" id="res-kb-source-type">AI CHATBOT KB</span>
+              <span class="badge-tag badge-ptn" id="res-kb-confidence-badge">High Grounding</span>
+            </div>
+            <div class="campus-meta-links">
+              <span class="meta-item"><i data-lucide="file-text"></i> Sumber: <strong id="res-kb-source-name">-</strong></span>
+              <span class="bullet-separator">•</span>
+              <span class="meta-item"><i data-lucide="clock"></i> Diproses: <strong id="res-kb-timestamp">-</strong></span>
+              <span class="bullet-separator">•</span>
+              <span class="meta-item"><i data-lucide="cpu"></i> Estimasi: <strong id="res-kb-tokens">0</strong> Tokens</span>
+            </div>
+          </div>
+
+          <!-- Export Actions -->
+          <div class="workspace-export-group">
+            <div class="export-dropdown-wrapper">
+              <button class="btn-export-primary btn-export-indigo" id="btn-export-kb-main">
+                <i data-lucide="download"></i>
+                <span>Export Knowledge Base</span>
+                <i data-lucide="chevron-down" class="chevron-icon"></i>
+              </button>
+              <div class="export-dropdown-menu hidden" id="export-kb-dropdown-menu">
+                <button class="dropdown-item" id="act-kb-export-jsonl">
+                  <i data-lucide="file-json" class="icon-json"></i>
+                  <div class="dropdown-text">
+                    <span class="dropdown-title">Chatbot Dataset (JSONL)</span>
+                    <span class="dropdown-sub">Format training / intent matcher</span>
+                  </div>
+                </button>
+                <button class="dropdown-item" id="act-kb-export-rag">
+                  <i data-lucide="database" class="icon-blue"></i>
+                  <div class="dropdown-text">
+                    <span class="dropdown-title">RAG Vector Chunks (JSON)</span>
+                    <span class="dropdown-sub">Embedding untuk vector database</span>
+                  </div>
+                </button>
+                <button class="dropdown-item" id="act-kb-export-system-prompt">
+                  <i data-lucide="terminal" class="icon-purple"></i>
+                  <div class="dropdown-text">
+                    <span class="dropdown-title">System Prompt (.txt)</span>
+                    <span class="dropdown-sub">Prompt instruksi ChatGPT / Claude</span>
+                  </div>
+                </button>
+                <button class="dropdown-item" id="act-kb-export-excel">
+                  <i data-lucide="file-spreadsheet" class="icon-excel"></i>
+                  <div class="dropdown-text">
+                    <span class="dropdown-title">Excel Spreadsheet (.xlsx)</span>
+                    <span class="dropdown-sub">Multi-sheet Q&A & Keywords</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+            <button class="btn-secondary" id="btn-new-kb-scrape">
+              <i data-lucide="plus"></i>
+              <span>Ekstrak Baru</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4-Column Responsive Quick Summary Stats Metric Grid -->
+        <div class="workspace-stats-grid">
+          <div class="stat-box" data-target-tab="tab-kb-qa">
+            <div class="stat-icon-wrapper icon-indigo"><i data-lucide="message-square-quote"></i></div>
+            <div class="stat-data">
+              <span class="stat-number" id="stat-kb-qa-count">0</span>
+              <span class="stat-label">Q&A Chatbot Pairs</span>
+            </div>
+          </div>
+          <div class="stat-box" data-target-tab="tab-kb-keywords">
+            <div class="stat-icon-wrapper icon-purple"><i data-lucide="key-round"></i></div>
+            <div class="stat-data">
+              <span class="stat-number" id="stat-kb-keywords-count">0</span>
+              <span class="stat-label">Trigger Keywords</span>
+            </div>
+          </div>
+          <div class="stat-box" data-target-tab="tab-kb-simulator">
+            <div class="stat-icon-wrapper icon-green"><i data-lucide="bot"></i></div>
+            <div class="stat-data">
+              <span class="stat-number">READY</span>
+              <span class="stat-label">Interactive Simulator</span>
+            </div>
+          </div>
+          <div class="stat-box" data-target-tab="tab-kb-rag">
+            <div class="stat-icon-wrapper icon-blue"><i data-lucide="layers"></i></div>
+            <div class="stat-data">
+              <span class="stat-number" id="stat-kb-chunks-count">0</span>
+              <span class="stat-label">RAG Chunks</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs Bar -->
+      <div class="tabs-nav-bar" id="kb-tabs-nav-bar">
+        <button class="tab-btn active" data-tab="tab-kb-qa">
+          <i data-lucide="messages-square"></i>
+          <span>Daftar Q&A Chatbot</span>
+          <span class="tab-badge tab-badge-indigo" id="kb-tab-badge-qa">0</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-kb-keywords">
+          <i data-lucide="key"></i>
+          <span>Kata Kunci & Synonyms</span>
+          <span class="tab-badge" id="kb-tab-badge-kw">0</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-kb-simulator">
+          <i data-lucide="bot"></i>
+          <span>Test Chatbot Simulator</span>
+          <span class="badge-live-dot">LIVE</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-kb-rag">
+          <i data-lucide="file-code"></i>
+          <span>RAG Chunks & System Prompt</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-kb-source">
+          <i data-lucide="align-left"></i>
+          <span>Teks Sumber & Grounding</span>
+        </button>
+      </div>
+
+      <!-- Workspace Tabs Container -->
+      <div class="workspace-tabs-container">
+        
+        <!-- KB TAB 1: Q&A Chatbot List -->
+        <div id="tab-kb-qa" class="tab-pane active">
+          <div class="content-card">
+            <div class="card-header">
+              <div>
+                <h3><i data-lucide="messages-square"></i> Q&A Knowledge Base untuk Chatbot</h3>
+                <p class="card-subtitle">Pertanyaan dan jawaban terstruktur yang diekstrak langsung dari teks sumber dengan tingkat keakuratan tinggi.</p>
+              </div>
+              <div class="card-actions-right">
+                <input type="text" id="filter-kb-qa-input" class="search-mini-input" placeholder="Cari pertanyaan / kata kunci...">
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="kb-qa-cards-container" class="kb-qa-grid"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KB TAB 2: Keywords & Synonyms -->
+        <div id="tab-kb-keywords" class="tab-pane">
+          <div class="content-card mb-4">
+            <div class="card-header">
+              <div>
+                <h3><i data-lucide="key-round"></i> Trigger Keywords & N-Gram Phrases</h3>
+                <p class="card-subtitle">Kata kunci dengan bobot frekuensi tertinggi yang memicu intent bot.</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <h4 class="subheading-label">Kata Kunci Utama (Ranked by Frequency)</h4>
+              <div id="kb-primary-keywords-list" class="keywords-cloud mb-4"></div>
+
+              <h4 class="subheading-label">Frasa Kunci (N-Gram Phrases)</h4>
+              <div id="kb-phrases-keywords-list" class="keywords-cloud mb-4"></div>
+
+              <h4 class="subheading-label">Klasifikasi Intent & Variasi Pertanyaan Pengguna</h4>
+              <div id="kb-synonyms-container" class="synonyms-grid"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KB TAB 3: Test Chatbot Simulator -->
+        <div id="tab-kb-simulator" class="tab-pane">
+          <div class="content-card">
+            <div class="card-header">
+              <div>
+                <h3><i data-lucide="bot"></i> Live Chatbot Simulator Playground</h3>
+                <p class="card-subtitle">Uji langsung akurasi jawaban bot berdasarkan data yang baru saja Anda ekstrak sebelum di-deploy.</p>
+              </div>
+              <button id="btn-clear-chat" class="btn-ghost-sm"><i data-lucide="rotate-ccw"></i> Reset Percakapan</button>
+            </div>
+            <div class="card-body p-0">
+              <div class="simulator-chat-box">
+                <div class="chat-messages" id="sim-chat-messages">
+                  <div class="chat-msg chat-msg-bot">
+                    <div class="chat-avatar"><i data-lucide="bot"></i></div>
+                    <div class="chat-bubble">
+                      <p>Halo! Saya adalah AI Assistant yang siap menjawab pertanyaan seputar <strong>data yang Anda ekstrak</strong>. Silakan ajukan pertanyaan apa saja terkait biaya, pendaftaran, syarat, atau informasi lainnya!</p>
+                      <div class="chat-suggestions" id="sim-chat-suggestions"></div>
+                    </div>
+                  </div>
+                </div>
+                <form id="sim-chat-form" class="chat-input-bar">
+                  <input type="text" id="sim-chat-input" placeholder="Tanyakan sesuatu ke chatbot (contoh: Berapa biaya kuliah? / Apa saja syaratnya?)..." autocomplete="off" required>
+                  <button type="submit" class="btn-primary-indigo"><i data-lucide="send"></i> Kirim</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KB TAB 4: RAG Chunks & System Prompt -->
+        <div id="tab-kb-rag" class="tab-pane">
+          <div class="content-card mb-4">
+            <div class="card-header">
+              <div>
+                <h3><i data-lucide="terminal"></i> AI System Prompt & Knowledge Context</h3>
+                <p class="card-subtitle">Copy-paste langsung ke Custom GPTs, Claude Projects, atau OpenAI API System Message.</p>
+              </div>
+              <button id="btn-copy-system-prompt" class="btn-primary-sm btn-primary-indigo"><i data-lucide="copy"></i> Copy Prompt</button>
+            </div>
+            <div class="card-body">
+              <div class="code-viewer-panel" id="kb-system-prompt-viewer"></div>
+            </div>
+          </div>
+
+          <div class="content-card">
+            <div class="card-header">
+              <div>
+                <h3><i data-lucide="database"></i> RAG Document Chunks (Embedding-Ready)</h3>
+                <p class="card-subtitle">Struktur chunking teks semantik dengan metadata untuk Vector DB.</p>
+              </div>
+              <button id="btn-copy-rag-chunks" class="btn-ghost-sm"><i data-lucide="copy"></i> Copy JSON Chunks</button>
+            </div>
+            <div class="card-body">
+              <div class="code-viewer-panel" id="kb-rag-chunks-viewer"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KB TAB 5: Source Text & Fact Grounding -->
+        <div id="tab-kb-source" class="tab-pane">
+          <div class="content-card">
+            <div class="card-header">
+              <div>
+                <h3><i data-lucide="align-left"></i> Teks Sumber Asli yang Bersih</h3>
+                <p class="card-subtitle">Teks rujukan asli untuk audit kebenaran data.</p>
+              </div>
+              <button id="btn-copy-kb-source-text" class="btn-ghost-sm"><i data-lucide="copy"></i> Copy Teks Asli</button>
+            </div>
+            <div class="card-body">
+              <div class="clean-text-reader" id="kb-source-text-viewer"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Features / Value Prop Section on Landing -->
+    <section class="features-section" id="landing-features">
+      <div class="features-header">
+        <h2>Kemampuan Ekstraksi Multi-Dimensi</h2>
+        <p>Dirancang khusus untuk menganalisis dan menambang data website perguruan tinggi dan dokumen PDF/Word dengan presisi tinggi.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon icon-purple"><i data-lucide="brain-circuit"></i></div>
+          <h3>Indonesian Campus AI Engine</h3>
+          <p>Mengenali istilah khusus kampus: BAN-PT, LAM-PTKes, Jenjang D3/D4/S1/S2/S3/Spesialis, SNBP, SNBT, UKT, dan SK Rektor.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon icon-blue"><i data-lucide="shield-check"></i></div>
+          <h3>Multi-Engine CORS Bypass</h3>
+          <p>Ditenagai 5 layer proxy fallbacks berkecepatan tinggi yang mampu menembus CORS protection web HTML & JS modern.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon icon-amber"><i data-lucide="file-check-2"></i></div>
+          <h3>PDF.js & Mammoth Parser</h3>
+          <p>Mampu membaca seluruh halaman PDF dan file Word (.docx) secara presisi langsung di browser tanpa upload ke server luar.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon icon-green"><i data-lucide="table-properties"></i></div>
+          <h3>Universal Table Miner</h3>
+          <p>Menangkap semua struktur tabel biaya, jadwal seleksi, dan matriks kurikulum dengan konversi instan ke multi-sheet Excel (.xlsx).</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal: Batch Scraping Queue -->
+  <div id="modal-batch" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i data-lucide="layers"></i> Ekstraksi Massal (Batch URL Queue)</h3>
+        <button class="btn-close-modal" id="btn-close-batch-modal"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">Paste beberapa link website kampus sekaligus (satu URL per baris). Sistem akan memproses satu per satu dan menggabungkan hasilnya.</p>
+        <textarea id="batch-urls-textarea" rows="6" placeholder="https://ui.ac.id/akademik/&#10;https://ugm.ac.id&#10;https://itb.ac.id/program-studi"></textarea>
+        <div class="batch-status-panel hidden" id="batch-status-panel">
+          <div class="batch-progress-info">
+            <span id="batch-progress-text">Memproses 0 dari 0...</span>
+          </div>
+          <div class="progress-bar-container">
+            <div id="batch-progress-fill" class="progress-bar-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="btn-cancel-batch">Tutup</button>
+        <button class="btn-primary" id="btn-start-batch"><i data-lucide="play"></i> Jalankan Batch</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Manual HTML Fallback -->
+  <div id="modal-manual-html" class="modal-overlay hidden">
+    <div class="modal-card modal-large">
+      <div class="modal-header">
+        <h3><i data-lucide="file-code"></i> Paste Raw HTML / Source Code</h3>
+        <button class="btn-close-modal" id="btn-close-manual-modal"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">Jika target website memiliki Cloudflare / proteksi ketat, Anda dapat membuka halaman tersebut di browser, tekan <code>Ctrl+U</code> / <code>Cmd+Option+U</code> (View Source), lalu paste seluruh HTML ke dalam kotak di bawah:</p>
+        <input type="url" id="manual-html-url" placeholder="URL Website (opsional untuk referensi link absolut)..." class="mb-2">
+        <textarea id="manual-html-textarea" rows="10" placeholder="Paste source code HTML di sini (&lt;!DOCTYPE html&gt;&lt;html&gt;...&lt;/html&gt;)"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="btn-cancel-manual">Batal</button>
+        <button class="btn-primary" id="btn-process-manual-html"><i data-lucide="sparkles"></i> Ekstrak dari HTML</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="js/perfUtils.js"></script>
+  <script src="js/extractor.js"></script>
+  <script src="js/docExtractor.js"></script>
+  <script src="js/knowledgeExtractor.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
